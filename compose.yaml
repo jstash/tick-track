@@ -1,0 +1,8 @@
+services:
+  ticktrack:
+    image: ticktrack
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
