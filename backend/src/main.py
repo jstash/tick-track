@@ -1,8 +1,9 @@
 from fastapi import FastAPI
-from services.yfinance_client import get_closing_price
+from services.market_data import get_client as get_market_data_client
 
 app = FastAPI()
 
 @app.get("/")
 def home():
-    return {"stock_price": get_closing_price("AAPL")}
+    client = get_market_data_client()
+    return {"stock_price": client.fetch_current_price("AAPL")}
