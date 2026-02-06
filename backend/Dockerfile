@@ -9,6 +9,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
 
+# Make src/ a top-level module location so we can import `services`
+ENV PYTHONPATH=/app/src
+
 # Install pip requirements
 COPY src/requirements.txt .
 RUN python -m pip install -r requirements.txt
