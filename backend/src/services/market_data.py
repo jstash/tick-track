@@ -5,10 +5,12 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class MarketDataClient:
     @abstractmethod
     def fetch_current_price(self, ticker: str) -> float:
         pass
+
 
 class YFinanceClient(MarketDataClient):
     def fetch_current_price(self, ticker: str) -> float:
@@ -18,6 +20,6 @@ class YFinanceClient(MarketDataClient):
         logger.info(f"Current price for %s, %s", ticker, price)
         return price
 
+
 def get_client() -> MarketDataClient:
     return YFinanceClient()
-
