@@ -14,7 +14,7 @@ class MarketDataClient:
 
 class YFinanceClient(MarketDataClient):
     def fetch_current_price(self, ticker: str) -> float:
-        stock = yf.Ticker(ticker)
+        stock = yf.Ticker(ticker.upper())
         price = stock.history(period="1d", interval="1m")["Close"].iloc[-1]
         price = round(price, 2)
         logger.info(f"Current price for %s, %s", ticker, price)
