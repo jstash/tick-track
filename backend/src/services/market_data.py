@@ -17,7 +17,7 @@ class YFinanceClient(MarketDataClient):
         stock = yf.Ticker(ticker.upper())
         price = stock.history(period="1d", interval="1m")["Close"].iloc[-1]
         price = round(price, 2)
-        logger.info(f"Current price for %s, %s", ticker, price)
+        logger.info("Current price for %s, %s", ticker, price)
         return price
 
 
