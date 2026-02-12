@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String, ForeignKey
+from pydantic.main import BaseModel
+from sqlalchemy import Boolean, DateTime, Float, Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.utils.dates import get_current_datetime_utc
+from src.dates import get_current_datetime_utc
 from src.db import Base
 
 default_datetime_func = get_current_datetime_utc
@@ -14,8 +15,10 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     username: Mapped[str] = mapped_column(String(16), index=True)
+    full_name: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(120), index=True)
-    password: Mapped[str] = mapped_column(String(128))
+    disabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    hashed_password: Mapped[str] = mapped_column(String(128))
     timestamp: Mapped[datetime] = mapped_column(
         DateTime, default=default_datetime_func, index=True
     )
@@ -36,8 +39,32 @@ class Watchlist(Base):
     __tablename__ = "watchlists"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(120), index=True)
+    symbol: Mapped[str] = mapped_column(String(120), index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
     timestamp: Mapped[datetime] = mapped_column(
         DateTime, default=default_datetime_func, index=True
     )
+
+
+class WatchlistAdd(BaseModel):
+    """Request body for POST /watchlist."""
+
+    symbol: str
+
+
+class UserCreate(BaseModel):
+    """Request body for POST /register."""
+
+    username: str
+    full_name: str
+    email: str
+    password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None

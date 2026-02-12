@@ -1,65 +1,59 @@
-from contextlib import asynccontextmanager
+from typing import Annotated
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import Depends, FastAPI
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
+
+from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
-from src.db import Base, engine, get_db, SessionLocal
-from src.models import Price
-from src.services.market_data import get_client as get_market_data_client
-from src.utils.dates import get_current_datetime_utc, get_hours_ago_utc
-
-
-def run_update_prices(db: Session) -> list[Price]:
-    client = get_market_data_client()
-    tickers = ["aapl", "MSFT", "GOOG", "AMZN", "TSLA"]
-    prices = []
-    for ticker in tickers:
-        ticker = ticker.upper()
-        price = client.fetch_current_price(ticker)
-        price_entry = Price(
-            ticker=ticker, price=price, timestamp=get_current_datetime_utc()
-        )
-        prices.append(price_entry)
-    db.add_all(prices)
-    db.commit()
-    for p in prices:
-        db.refresh(p)
-    return prices
-
-
-def scheduled_update_prices() -> None:
-    db = SessionLocal()
-    try:
-        run_update_prices(db)
-    finally:
-        db.close()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("Starting")
-    print("Initializing database tables")
-    Base.metadata.create_all(bind=engine)
-    print("Done initializing database tables")
-
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(scheduled_update_prices, "interval", minutes=1)
-    scheduler.start()
-    app.state.scheduler = scheduler
-
-    yield
-
-    print("Shutting down")
-    scheduler.shutdown(wait=False)
-
+from src import test_data
+from src.auth import execute_register, get_current_active_user, execute_login
+from src.dates import get_hours_ago_utc
+from src.db import get_db
+from src.scheduler import lifespan, run_update_prices
+from src.models import Token, User, UserCreate, Price, Watchlist, WatchlistAdd
 
 app = FastAPI(lifespan=lifespan)
 
+auth_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+@app.post("/token")
+async def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Session = Depends(get_db),
+):
+    return await execute_login(form_data, db)
+
+
+@app.get("/users/me/items/")
+async def read_items(token: Annotated[str, Depends(auth_scheme)]):
+    return {"token": token}
+
+
+@app.get("/users/me")
+async def read_users_me(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    return current_user
+
 
 @app.get("/")
-def home():
-    return {"message": "Tik Track"}
+def home(db: Session = Depends(get_db)):
+    ret = {"message": "Tik Track", "users": []}
+    test_data.populate(db)
+    users = db.query(User).all()
+    for u in users:
+        ret["users"].append(
+            {
+                "username": u.username,
+                "email": u.email,
+                "full_name": u.full_name,
+                "disabled": u.disabled,
+                "hashed_password": u.hashed_password,
+            }
+        )
+    return ret
 
 
 @app.get("/update-prices")
@@ -108,3 +102,65 @@ def get_prices_history(ticker: str, hours: int = 24, db: Session = Depends(get_d
         .all()
     )
     return {"prices": prices}
+
+
+@app.post("/register", response_model=Token)
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    return execute_register(user, db)
+
+
+@app.get("/watchlist")
+def get_watchlist(
+    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
+):
+    watchlist = db.query(Watchlist).filter(Watchlist.user_id == current_user.id).all()
+    return [{"symbol": w.symbol} for w in watchlist]
+
+
+# Watchlist - Add symbol
+@app.post("/watchlist")
+def add_to_watchlist(
+    item: WatchlistAdd,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    # Check if already in watchlist
+    existing = (
+        db.query(Watchlist)
+        .filter(
+            Watchlist.user_id == current_user.id,
+            Watchlist.symbol == item.symbol.upper(),
+        )
+        .first()
+    )
+
+    if existing:
+        raise HTTPException(status_code=400, detail="Symbol already in watchlist")
+
+    watchlist_item = Watchlist(user_id=current_user.id, symbol=item.symbol.upper())
+    db.add(watchlist_item)
+    db.commit()
+    return {"message": "Added to watchlist", "symbol": item.symbol.upper()}
+
+
+# Watchlist - Remove symbol
+@app.delete("/watchlist/{symbol}")
+def remove_from_watchlist(
+    symbol: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    watchlist_item = (
+        db.query(Watchlist)
+        .filter(
+            Watchlist.user_id == current_user.id, Watchlist.symbol == symbol.upper()
+        )
+        .first()
+    )
+
+    if not watchlist_item:
+        raise HTTPException(status_code=404, detail="Symbol not in watchlist")
+
+    db.delete(watchlist_item)
+    db.commit()
+    return {"message": "Removed from watchlist"}
