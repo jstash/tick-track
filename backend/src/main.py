@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
-from src import test_data
+#from src import test_data
 from src.auth import execute_register, get_current_active_user, execute_login
 from src.dates import get_hours_ago_utc
 from src.db import get_db
@@ -41,7 +41,7 @@ async def read_users_me(
 @app.get("/")
 def home(db: Session = Depends(get_db)):
     ret = {"message": "Tik Track", "users": []}
-    test_data.populate(db)
+    #test_data.populate(db)
     users = db.query(User).all()
     for u in users:
         ret["users"].append(
