@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pydantic.main import BaseModel
+from pydantic import BaseModel, ConfigDict, field_serializer
 from sqlalchemy import Boolean, DateTime, Float, Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -44,6 +44,35 @@ class Watchlist(Base):
     timestamp: Mapped[datetime] = mapped_column(
         DateTime, default=default_datetime_func, index=True
     )
+
+
+class PriceRead(BaseModel):
+    """Serialized Price for API: timestamp is always UTC with a Z suffix (RFC 3339)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    ticker: str
+    price: float
+    timestamp: datetime
+
+    @field_serializer("timestamp")
+    def serialize_timestamp_utc_z(self, value: datetime) -> str:
+        v = (
+            value.replace(tzinfo=timezone.utc)
+            if value.tzinfo is None
+            else value.astimezone(timezone.utc)
+        )
+        return v.isoformat().replace("+00:00", "Z")
+
+
+class PricesQueryResponse(BaseModel):
+    prices: list[PriceRead]
+    missing: list[str]
+
+
+class PriceHistoryResponse(BaseModel):
+    prices: list[PriceRead]
 
 
 class WatchlistAdd(BaseModel):

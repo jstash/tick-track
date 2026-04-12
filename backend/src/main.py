@@ -11,7 +11,17 @@ from src.auth import execute_register, get_current_active_user, execute_login
 from src.dates import get_hours_ago_utc
 from src.db import get_db
 from src.scheduler import lifespan, run_update_prices
-from src.models import Token, User, UserCreate, Price, Watchlist, WatchlistAdd
+from src.models import (
+    Token,
+    User,
+    UserCreate,
+    Price,
+    PriceRead,
+    PricesQueryResponse,
+    PriceHistoryResponse,
+    Watchlist,
+    WatchlistAdd,
+)
 
 app = FastAPI(lifespan=lifespan)
 
@@ -60,12 +70,12 @@ def home(db: Session = Depends(get_db)):
 def update_prices(db: Session = Depends(get_db)):
     try:
         prices = run_update_prices(db)
-        return {"prices": prices}
+        return {"prices": [PriceRead.model_validate(p) for p in prices]}
     except Exception as e:
         return {"err": str(e)}
 
 
-@app.get("/prices")
+@app.get("/prices", response_model=PricesQueryResponse)
 def get_prices(tickers: str, db: Session = Depends(get_db)):
     prices = []
     missing = []
@@ -81,17 +91,17 @@ def get_prices(tickers: str, db: Session = Depends(get_db)):
         else:
             missing.append(ticker)
     return {
-        "prices": prices,
+        "prices": [PriceRead.model_validate(p) for p in prices],
         "missing": missing,
     }
 
 
-@app.get("/prices/{ticker}")
+@app.get("/prices/{ticker}", response_model=PricesQueryResponse)
 def get_price(ticker: str, db: Session = Depends(get_db)):
     return get_prices(ticker, db)
 
 
-@app.get("/price/{ticker}/history")
+@app.get("/price/{ticker}/history", response_model=PriceHistoryResponse)
 def get_prices_history(ticker: str, hours: int = 24, db: Session = Depends(get_db)):
     ticker = ticker.upper()
     from_date = get_hours_ago_utc(hours)
@@ -101,7 +111,9 @@ def get_prices_history(ticker: str, hours: int = 24, db: Session = Depends(get_d
         .filter(Price.timestamp >= from_date)
         .all()
     )
-    return {"prices": prices}
+    return {
+        "prices": [PriceRead.model_validate(p) for p in prices],
+    }
 
 
 @app.post("/register", response_model=Token)

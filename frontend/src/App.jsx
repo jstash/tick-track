@@ -1,4 +1,5 @@
 import { Routes, Route, NavLink } from 'react-router-dom'
+import ErrorBoundary from './ErrorBoundary'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -32,8 +33,22 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/watchlist" element={<Watchlist />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ErrorBoundary>
+                <Dashboard />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/watchlist"
+            element={
+              <ErrorBoundary>
+                <Watchlist />
+              </ErrorBoundary>
+            }
+          />
         </Routes>
       </main>
     </div>

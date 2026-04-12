@@ -180,7 +180,7 @@ export const watchlistAPI = {
    * @returns {Promise<Object>}
    */
   removeFromWatchlist: async (symbol) => {
-    return apiRequest(`/watchlist/${symbol}`, {
+    return apiRequest(`/watchlist/${encodeURIComponent(symbol)}`, {
       method: 'DELETE',
     });
   },

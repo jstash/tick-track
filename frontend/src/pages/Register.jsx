@@ -31,12 +31,26 @@ export default function Register() {
     try {
       setStatus({ type: "loading", message: "Creating your account..." });
 
-      const response = await fetch("http://localhost:8000/register", {
+      const full_name = form.name.trim();
+      const email = form.email.trim();
+      let username = (email.split("@")[0] ?? "")
+        .replace(/[^a-zA-Z0-9_]/g, "")
+        .slice(0, 16);
+      if (!username) {
+        username =
+          full_name
+            .replace(/\s+/g, "_")
+            .replace(/[^a-zA-Z0-9_]/g, "")
+            .slice(0, 16) || "user";
+      }
+
+      const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: form.name,
-          email: form.email,
+          username,
+          full_name,
+          email,
           password: form.password,
         }),
       });
