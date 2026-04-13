@@ -97,7 +97,7 @@ export default function Watchlist() {
     <div className="min-h-[calc(100vh-8rem)] text-slate-50">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-slate-100">Watchlist</h1>
+          <h1 className="text-2xl font-semibold text-slate-100">Configure</h1>
           <p className="mt-1 text-sm text-slate-400">
             Track ticker symbols you care about. Add or remove symbols below.
           </p>
@@ -191,7 +191,7 @@ export default function Watchlist() {
 
         <p className="mt-8 text-center text-xs text-slate-500">
           <Link to="/dashboard" className="text-indigo-400 hover:text-indigo-300">
-            Back to dashboard
+            Back to watchlist
           </Link>
         </p>
       </div>

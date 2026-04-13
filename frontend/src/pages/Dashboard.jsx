@@ -142,7 +142,7 @@ export default function Dashboard() {
         })
       );
     } catch (err) {
-      setLoadError(err.message || "Could not load dashboard data.");
+      setLoadError(err.message || "Could not load watchlist data.");
       setRows([]);
     } finally {
       setLoading(false);
@@ -177,7 +177,7 @@ export default function Dashboard() {
       <div className="mx-auto max-w-3xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-100">Dashboard</h1>
+            <h1 className="text-2xl font-semibold text-slate-100">Watchlist</h1>
             <p className="mt-1 text-sm text-slate-400">
               Latest prices for symbols on your watchlist.
             </p>
@@ -217,7 +217,7 @@ export default function Dashboard() {
               to="/watchlist"
               className="mt-4 inline-block text-sm font-medium text-indigo-400 hover:text-indigo-300"
             >
-              Manage watchlist
+              Configure
             </Link>
           </div>
         ) : (
@@ -285,7 +285,7 @@ export default function Dashboard() {
         {showTable && (
           <p className="mt-6 text-center text-xs text-slate-500">
             <Link to="/watchlist" className="text-indigo-400 hover:text-indigo-300">
-              Edit watchlist
+              Configure
             </Link>
           </p>
         )}

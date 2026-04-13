@@ -28,6 +28,13 @@
   background-color: #646cff;
 }
 
+button.nav-link {
+  font: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
 .main-content {
   flex: 1;
   padding: 2rem;
